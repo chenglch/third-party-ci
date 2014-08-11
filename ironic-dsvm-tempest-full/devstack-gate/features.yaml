@@ -1,0 +1,134 @@
+config:
+  default:
+    master: [default,  glance, horizon, nova,  keystone, heat ]
+    juno: [default,  glance, horizon, nova,  keystone, heat]
+    icehouse: [default,  glance, horizon, nova,  keystone, heat]
+    havana: [default,  glance, horizon, nova,  keystone, heat]
+  neutron:
+    features: [neutron]
+  # different backends
+  postgres:
+    features: [postgresql]
+  # feature changes for different test matrixes
+  grenade:
+    rm-features: [trove, sahara]
+  tempest:
+    features: [tempest]
+  # feature changes for different configs of existing services
+  nova_api_metadata_split:
+    features: [nova-md]
+  cells:
+    features: [nova-cells]
+  # feature declarations for incubated or recently integrated projects (so they
+  # can be tested outside the releases they were supported in)
+  trove:
+    features: [trove]
+  marconi:
+    features: [marconi]
+  sahara:
+    features: [sahara]
+  ironic:
+    features: [ironic]
+  qpid:
+    features: [qpid]
+  zeromq:
+    features: [zeromq]
+
+branches:
+  # The value of ""default" is the name of the "trunk" branch
+  default: master
+  # Normalized branch names only here, e.g. stable/icehouse => icehouse
+  allowed: [master, juno, icehouse, havana]
+
+features:
+  default:
+    base:
+      services: [mysql, rabbit, dstat]
+
+  #ceilometer:
+  #  base:
+  #    services: [ceilometer-acompute, ceilometer-acentral, ceilometer-collector, ceilometer-api, ceilometer-alarm-notifier, ceilometer-alarm-evaluator, ceilometer-anotification]
+  #  havana:
+  #    rm-services: [ceilometer-alarm-notifier, ceilometer-alarm-evaluator, ceilometer-anotification]
+
+  glance:
+    base:
+      services: [g-api, g-reg]
+
+  keystone:
+    base:
+      services: [key]
+
+  horizon:
+    base:
+      services: [horizon]
+
+  nova:
+    base:
+      services: [n-api, n-cond, n-cpu, n-crt, n-net, n-obj, n-sch]
+    havana:
+      rm-compute-ext:
+    icehouse:
+      compute-ext:
+
+  nova-md:
+    base:
+      services: [n-api-meta]
+
+  nova-cells:
+    base:
+      services: [n-cell]
+      rm-compute-ext: [agregates, hosts]
+
+  neutron:
+    base:
+      services: [quantum, q-svc, q-agt, q-dhcp, q-l3, q-meta, q-lbaas, q-vpn, q-fwaas, q-metering]
+      rm-services: [n-net]
+
+  #swift:
+  #  base:
+  #    services: [s-proxy, s-account, s-container, s-object]
+
+  #cinder:
+  #  base:
+  #    services: [cinder, c-api, c-vol, c-sch, c-bak]
+
+  heat:
+    base:
+      services: [heat, h-api, h-api-cfn, h-api-cw, h-eng]
+
+  #trove:
+  #  base:
+  #    services: [trove, tr-api, tr-tmgr, tr-cond]
+
+  ironic:
+    base:
+      services: [ir-api, ir-cond]
+
+  #sahara:
+  #  base:
+  #    services: [sahara]
+
+ # marconi:
+  #  base:
+   #   services: [marconi-server]
+
+  tempest:
+    base:
+      services: [tempest]
+
+  # service overrides
+  postgresql:
+    base:
+      services: [postgresql]
+      rm-services: [mysql]
+
+  zeromq:
+    base:
+      services: [zeromq]
+      rm-services: [rabbit]
+
+  qpid:
+    base:
+      services: [qpid]
+      rm-services: [rabbit]
