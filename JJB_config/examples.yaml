@@ -19,7 +19,7 @@
       - timestamps
 
     builders:
-      - devstack-checkout  # In macros.yaml from os-ext-testing
+      #- devstack-checkout  # In macros.yaml from os-ext-testing
       - shell: |
           #!/bin/bash -xe
           if [ -z $ZUUL_PROJECT ]; then
@@ -30,7 +30,7 @@
           fi
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_TEMPEST=0
           export RE_EXEC=true
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
@@ -39,3 +39,35 @@
 #    publishers:
 #      - devstack-logs  # In macros.yaml from os-ext-testing
 #      - console-log  # In macros.yaml from os-ext-testing
+- job-template:
+    name: 'ironic-dsvm-tempest-full'
+    node: '{node}'
+
+    wrappers:
+      - timeout:
+          timeout: 185  # Timeout in *minutes*
+          fail: true  # A job run that exceeds the timeout will cause a failure
+      - timestamps
+
+    builders:
+      #- devstack-checkout  # In macros.yaml from os-ext-testing
+      - shell: |
+          #!/bin/bash -xe
+          echo "Now the workspace is :"
+          echo `pwd`
+          if [ -z $ZUUL_PROJECT ]; then
+              export ZUUL_PROJECT=openstack-dev/sandbox
+          fi
+          if [ -z $ZUUL_BRANCH ]; then
+              export ZUUL_BRANCH=master
+          fi
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_IRONIC=1
+          export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
+          export RE_EXEC=true
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+          pwd
+      - link-logs  # In macros.yaml from os-ext-testing
