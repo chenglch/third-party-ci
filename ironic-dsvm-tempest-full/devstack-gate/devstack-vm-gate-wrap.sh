@@ -361,5 +361,6 @@ echo "Cleaning up host"
 echo "... this takes 3 - 4 minutes (logs at logs/devstack-gate-cleanup-host.txt.gz)"
 tsfilter cleanup_host &> $WORKSPACE/devstack-gate-cleanup-host.txt
 sudo mv $WORKSPACE/devstack-gate-cleanup-host.txt $BASE/logs/
-
+sudo -H -u stack bash $BASE/new/devstack/unstack.sh
+sudo -H -u stack pkill -ustack
 exit $RETVAL

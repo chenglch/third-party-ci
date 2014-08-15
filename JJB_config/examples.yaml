@@ -65,9 +65,11 @@
           export DEVSTACK_GATE_TIMEOUT=180
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_IRONIC=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_VIRT_DRIVER=ironic
           export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
           export RE_EXEC=true
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
-          pwd
+          echo "ZUUL_BRANCH is "$ZUUL_BRANCH
       - link-logs  # In macros.yaml from os-ext-testing
