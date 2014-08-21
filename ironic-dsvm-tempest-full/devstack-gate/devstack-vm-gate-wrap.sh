@@ -339,8 +339,17 @@ if [ $GATE_RETVAL -ne 0 ]; then
     echo "    please look at the relevant log files to determine the root cause"
 fi
 
+# add by chenglch, run third party testcase
+cd $JENKINS_TEST_HOME/devstack-gate/testcase/
+./test_stack.sh
+TEST_STACK=$?
+RETVAL=$TEST_STACK
+if [ $TEST_STACK -ne 0 ];then
+    echo "ERROR: xcat.ironic.third-party-ci.testcase"
+fi
+
 # Run post test hook if we have one
-if [ $GATE_RETVAL -eq 0 ] && function_exists "post_test_hook"; then
+if [ $TEST_STACK -eq 0 ] && [ $GATE_RETVAL -eq 0 ] && function_exists "post_test_hook"; then
   echo "Running post_test_hook"
   xtrace=$(set +o | grep xtrace)
   set -o xtrace -o pipefail
@@ -361,6 +370,9 @@ echo "Cleaning up host"
 echo "... this takes 3 - 4 minutes (logs at logs/devstack-gate-cleanup-host.txt.gz)"
 tsfilter cleanup_host &> $WORKSPACE/devstack-gate-cleanup-host.txt
 sudo mv $WORKSPACE/devstack-gate-cleanup-host.txt $BASE/logs/
-sudo -H -u stack bash $BASE/new/devstack/unstack.sh
-sudo -H -u stack pkill -ustack
+
+#add by chenglch clean the environment
+cd $JENKINS_TEST_HOME/devstack-gate/testcase/
+./clean.sh
+
 exit $RETVAL
