@@ -340,9 +340,10 @@ if [ $GATE_RETVAL -ne 0 ]; then
 fi
 
 # add by chenglch, run third party testcase
-cd $JENKINS_TEST_HOME/devstack-gate/testcase/
-./test_stack.sh
+cd $BASE/new/testcase/
+sudo -H -u stack stdbuf -oL -eL ./test_stack.sh
 TEST_STACK=$?
+
 RETVAL=$TEST_STACK
 if [ $TEST_STACK -ne 0 ];then
     echo "ERROR: xcat.ironic.third-party-ci.testcase"
@@ -372,7 +373,6 @@ tsfilter cleanup_host &> $WORKSPACE/devstack-gate-cleanup-host.txt
 sudo mv $WORKSPACE/devstack-gate-cleanup-host.txt $BASE/logs/
 
 #add by chenglch clean the environment
-cd $JENKINS_TEST_HOME/devstack-gate/testcase/
-./clean.sh
-
+cd $BASE/new/testcase/
+sudo -H -u stack stdbuf -oL -eL ./clean.sh
 exit $RETVAL

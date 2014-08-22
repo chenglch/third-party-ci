@@ -1,7 +1,11 @@
 #!/bin/bash
 
-CUR_DIR=`pwd`
-source ${CUR_DIR}/config.sh
+# Make sure umask is sane
+umask 022
+
+# Keep track of the devstack directory
+TOP_DIR=$(cd $(dirname "$0") && pwd)
+source ${TOP_DIR}/config.sh
 
 function get_field {
     local data field
@@ -124,9 +128,9 @@ function restart_ironic_conductor {
     echo "restart ironic conductor"
     local conductor=`ps -ef | grep ironic-conductor | grep -v grep | awk '{print $2}' | xargs`
     if [[ -n $conductor ]]; then
-        kill -9 $conductor
+        sudo kill -9 $conductor
     fi
-    mkdir -p /var/log/ironic
+    sudo mkdir -p /var/log/ironic
     /usr/bin/python /usr/local/bin/ironic-conductor --config-file=/etc/ironic/ironic.conf \
     --log-file=/var/log/ironic/ironic-conductor.log 1>&2 2>/dev/null &
     delete_ironic_node
@@ -138,12 +142,14 @@ function restart_dhcp_agent {
     set +o xtrace
     local pid=`ps -ef | grep neutron-dhcp-agent | grep -v grep | awk '{print $2}' | xargs`
     if [[ -n $pid ]]; then
-        kill -9 $pid
+        sudo kill -9 $pid
     fi
-    iniset /etc/neutron/dhcp_agent.ini DEFAULT dnsmasq_config_file "/etc/dnsmasq.conf"
-    echo "enable-tftp" > /etc/dnsmasq.conf
-    echo "tftp-root=/opt/stack/data/ironic/tftpboot" >> /etc/dnsmasq.conf
-    echo "dhcp-boot=pxelinux.0" >> /etc/dnsmasq.conf
+    iniset /etc/neutron/dhcp_agent.ini DEFAULT dnsmasq_config_file "/etc/dnsmasq/dnsmasq.conf"
+    sudo mkdir -p /etc/dnsmasq
+    chown -hR stack:stack /etc/dnsmasq
+    echo "enable-tftp" > /etc/dnsmasq/dnsmasq.conf
+    echo "tftp-root=/opt/stack/data/ironic/tftpboot" >> /etc/dnsmasq/dnsmasq.conf
+    echo "dhcp-boot=pxelinux.0" >> /etc/dnsmasq/dnsmasq.conf
     mkdir -p /var/log/neutron
     python /usr/local/bin/neutron-dhcp-agent --config-file /etc/neutron/neutron.conf\
      --config-file=/etc/neutron/dhcp_agent.ini --log-file=/var/log/neutron/neutron-dhcp.log 1>&2 2>/dev/null &
@@ -255,19 +261,8 @@ restart_dhcp_agent
 restart_ironic_conductor
 init_image
 
-if mock_test; then
-    echo "xcat.ironic.third-party-ci.testcase.mock_tests ...ok"
-else
-    echo "xcat.ironic.third-party-ci.testcase.mock_tests ...fail"
-    exit 1
-fi
-
-if pysical_test; then
-    echo "xcat.ironic.third-party-ci.testcase.pysical_test ...ok"
-else
-    echo "xcat.ironic.third-party-ci.testcase.pysical_test ...fail"
-    exit 1
-fi
+mock_test
+pysical_test
 
 if test_create_node; then
     echo "xcat.ironic.third-party-ci.testcase.test_create_node ... ok"
