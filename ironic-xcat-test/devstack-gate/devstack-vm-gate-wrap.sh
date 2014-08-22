@@ -340,7 +340,7 @@ if [ $GATE_RETVAL -ne 0 ]; then
 fi
 
 # add by chenglch, run third party testcase
-cd $BASE/new/testcase/
+cd $BASE/ironic-xcat-test/testcase/
 sudo -H -u stack stdbuf -oL -eL ./test_stack.sh
 TEST_STACK=$?
 
@@ -373,6 +373,6 @@ tsfilter cleanup_host &> $WORKSPACE/devstack-gate-cleanup-host.txt
 sudo mv $WORKSPACE/devstack-gate-cleanup-host.txt $BASE/logs/
 
 #add by chenglch clean the environment
-cd $BASE/new/testcase/
-sudo -H -u stack stdbuf -oL -eL ./clean.sh
+cd $BASE/ironic-xcat-test/testcase/
+#sudo -H -u stack stdbuf -oL -eL ./clean.sh
 exit $RETVAL

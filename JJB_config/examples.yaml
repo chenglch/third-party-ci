@@ -40,7 +40,7 @@
 #      - devstack-logs  # In macros.yaml from os-ext-testing
 #      - console-log  # In macros.yaml from os-ext-testing
 - job-template:
-    name: 'ironic-dsvm-tempest-full'
+    name: 'ironic-xcat-third-party-test'
     node: '{node}'
 
     wrappers:
@@ -69,6 +69,7 @@
           export DEVSTACK_GATE_VIRT_DRIVER=ironic
           export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
           export RE_EXEC=true
+          cp -rf /opt/stack/ironic-xcat-test/devstack-gate ./
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
           echo "ZUUL_BRANCH is "$ZUUL_BRANCH

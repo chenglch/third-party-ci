@@ -80,6 +80,8 @@ function pepare_ironic_conductor {
     set +o xtrace
     echo "setup ironic pxe_ipminative driver"
     iniset /etc/ironic/ironic.conf DEFAULT enabled_drivers "fake,pxe_ssh,pxe_ipmitool/enabled_drivers = fake,pxe_ssh,pxe_ipmitool,pxe_ipminative"
+    iniset /etc/ironic/ironic.conf pxe tftp_server 10.1.0.161
+    iniset /etc/ironic/ironic.conf conductor api_url "http://10.1.0.161:6385"
     pip install pyghmi
     $xtrace
 }
@@ -160,6 +162,7 @@ function mock_test {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
     nosetests -sv ironic.tests.drivers.test_ipminative
+    return $?
     $xtrace
 }
 
@@ -167,6 +170,7 @@ function pysical_test {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
     nosetests -sv ${CUR_DIR}/test_ipminative.py
+    return $?
     $xtrace
 }
 
@@ -208,7 +212,7 @@ function test_create_node {
         echo "get power info error ---line $LINENO"
         return 1;
     fi
-
+    power_state=`ironic node-show $IRONIC_NODE | grep power_state | grep -v target_power_state | get_field 2`
     if [[ $power_state == "power off" ]]; then
         return 0;
     else
@@ -261,8 +265,19 @@ restart_dhcp_agent
 restart_ironic_conductor
 init_image
 
-mock_test
-pysical_test
+if mock_test; then
+    echo "xcat.ironic.third-party-ci.testcase.mock_tests ...ok"
+else
+    echo "xcat.ironic.third-party-ci.testcase.mock_tests ...fail"
+    exit 1
+fi
+
+if pysical_test; then
+    echo "xcat.ironic.third-party-ci.testcase.pysical_test ...ok"
+else
+    echo "xcat.ironic.third-party-ci.testcase.pysical_test ...fail"
+    exit 1
+fi
 
 if test_create_node; then
     echo "xcat.ironic.third-party-ci.testcase.test_create_node ... ok"
