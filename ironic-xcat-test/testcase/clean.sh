@@ -12,5 +12,7 @@ function clean_netns {
 }
 
 sudo -H -u stack bash $BASE/new/devstack/unstack.sh
-pkill -ustack
 clean_netns
+sudo rm -rf $BASE/new/ironic
+pkill -ustack
+

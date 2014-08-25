@@ -80,8 +80,8 @@ function pepare_ironic_conductor {
     set +o xtrace
     echo "setup ironic pxe_ipminative driver"
     iniset /etc/ironic/ironic.conf DEFAULT enabled_drivers "fake,pxe_ssh,pxe_ipmitool/enabled_drivers = fake,pxe_ssh,pxe_ipmitool,pxe_ipminative"
-    iniset /etc/ironic/ironic.conf pxe tftp_server 10.1.0.161
-    iniset /etc/ironic/ironic.conf conductor api_url "http://10.1.0.161:6385"
+    iniset /etc/ironic/ironic.conf pxe tftp_server $IFONIC_API_IP_ADDRESS
+    iniset /etc/ironic/ironic.conf conductor api_url "http://$IFONIC_API_IP_ADDRESS:6385"
     pip install pyghmi
     $xtrace
 }
@@ -191,6 +191,8 @@ function test_create_node {
 #      -p cpus=1 -p memory_mb=512 -p local_gb=10 -p cpu_arch=x86_64\
 #       | grep uuid | grep -v chassis_uuid |  awk '{print $4}'`
 
+    # just test pxe_ssh
+    IRONIC_NODE_MAC=virsh dumpxml baremetalbrbm_0 | grep "mac address=" | awk -F "[']" '{print $2}'
     echo "Ironic Node $IRONIC_NODE created "
     #ironic port-create --address 52:54:00:b1:cc:13 --node_uuid $IRONIC_NODE
     ironic node-show $IRONIC_NODE
@@ -209,14 +211,14 @@ function test_create_node {
         echo "ironic node power off sleep $IRONIC_NODE_POWER_OFF_WAIT"
         sleep ${IRONIC_NODE_POWER_OFF_WAIT}s
     elif [[ -z $power_state ]] || [[ $power_state == "None" ]]; then
-        echo "get power info error ---line $LINENO"
+        echo "get power info error $0 ---line $LINENO"
         return 1;
     fi
     power_state=`ironic node-show $IRONIC_NODE | grep power_state | grep -v target_power_state | get_field 2`
     if [[ $power_state == "power off" ]]; then
         return 0;
     else
-        echo "ironic power off error ---line $LINENO"
+        echo "ironic power off error $0 ---line $LINENO"
         return 1;
     fi
     $xtrace
@@ -227,33 +229,49 @@ function test_nova_boot {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
     local bare_flavor=`nova flavor-list | grep baremetal`
+    echo "deploy flavor $bare_flavor $0 ---line $LINENO"
     if [[ -z $bare_flavor ]]; then
         nova flavor-create --ephemeral 0 baremetal auto 512 10 1
+        echo "create flavor $bare_flavor $0 ---line $LINENO"
     fi
     local net_id=`neutron net-list | grep private | get_field 1`
+    echo "create net_id $net_id $0 ---line $LINENO"
     local instance_uuid=`nova boot --flavor baremetal --image $CIRROS_IMAGE_UUID test_ipminative --availability-zone nova:$HOST\
     --nic net-id=$net_id | grep id | head -n 1 | get_field 2`
     echo "nova instance $instance_uuid created"
     sleep ${NOVA_DEPLOY_START_WAIT}s
     local provision_state=`ironic node-list | grep $instance_uuid | get_field 4`
     if [[ $provision_state != "deploying" ]] && [[ $provision_state != "wait call-back" ]]; then
-        echo "deploy $instance_uuid failed ---line $LINENO"
+        echo "deploy $instance_uuid failed $0 ---line $LINENO"
         return 1
     fi
     sleep ${NOVA_POWER_ON_WAIT}s
     local power_state=`ironic node-list | grep $instance_uuid | get_field 3`
     if [[ $power_state != "power on" ]]; then
-        echo "power on $instance_uuid failed ---line $LINENO"
+        echo "power on $instance_uuid failed $0 ---line $LINENO"
         return 1
     fi
     sleep ${NOVA_DEPLOY_ACTIVE_WAIT}s
     local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
-    if [[ $task_state != "active" ]]; then
-        echo "Download $instance_uuid failed ---line $LINENO"
-        return 1
+    if [[ $task_state == "active" ]]; then
+        nova list
+        ironic node-set-power-state $IRONIC_NODE off
+        return 0
     fi
-    $xtrace
-    return 0
+    local i=0
+    while(($i<$RETRY_TIME))
+    do
+        local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
+        if [[ $task_state == "active" ]]; then
+            nova list
+            ironic node-set-power-state $IRONIC_NODE off
+            return 0
+        fi
+        sleep ${NOVA_SCAN_WAIT}s
+        i=$(($i+1))
+    done
+    echo "Download $instance_uuid failed $0 ---line $LINENO"
+    return 1
 }
 echo "setup ipminative environment"
 #mysql -psecret -uroot -h127.0.0.1 -e "delete from ironic.ports;"
