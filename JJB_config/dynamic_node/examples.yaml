@@ -43,6 +43,7 @@
 - job-template:
     name: 'ironic-xcat-third-party-prep-env'
     node: hypervisor_host
+    block-downstream: true
     wrappers:
       - timeout:
          timeout: 60
@@ -52,12 +53,17 @@
     builders:
       - shell: |
           echo "build ironic xcat third party test environment..."
-          cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
-          virsh resume test_ci_slave_temp
+          #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
+          #virsh resume test_ci_slave_temp
+
+    publishers:
+      - trigger:
+          project: ironic-xcat-third-party-destroy-env
 
 - job-template:
     name: 'ironic-xcat-third-party-destroy-env'
     node: hypervisor_host
+    block-upstream: true
     wrappers:
       - timeout:
          timeout: 60
@@ -67,7 +73,11 @@
     builders:
       - shell: |
           echo "destroy ironic xcat third party test environment..."
-          virsh suspend test_ci_slave_temp
+          sleep 6000s
+          echo "complete"
+          #virsh suspend test_ci_slave_temp
+
+
 
 
 - job-template:
@@ -81,7 +91,6 @@
       - timestamps
 
     builders:
-      #- devstack-checkout  # In macros.yaml from os-ext-testing
       - shell: |
           #!/bin/bash -xe
           echo "ZUUL_BRANCH=$ZUUL_BRANCH ZUUL_REF=$ZUUL_REF"
