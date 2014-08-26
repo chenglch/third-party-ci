@@ -53,6 +53,7 @@
       #- devstack-checkout  # In macros.yaml from os-ext-testing
       - shell: |
           #!/bin/bash -xe
+          echo "ZUUL_BRANCH=$ZUUL_BRANCH ZUUL_REF=$ZUUL_REF"
           echo "Now the workspace is :"
           echo `pwd`
           if [ -z $ZUUL_PROJECT ]; then
@@ -63,11 +64,11 @@
           fi
           export PYTHONUNBUFFERED=true
           export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=1
+          #export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_IRONIC=1
           export DEVSTACK_GATE_NEUTRON=1
           export DEVSTACK_GATE_VIRT_DRIVER=ironic
-          export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
+          #export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
           export RE_EXEC=true
           cp -rf /opt/stack/ironic-xcat-test/devstack-gate ./
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
