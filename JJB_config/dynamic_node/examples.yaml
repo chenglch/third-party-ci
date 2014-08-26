@@ -1,0 +1,117 @@
+- job-template:
+    name: 'noop-check-communication'
+    node: '{node}'
+
+    builders:
+      - shell: |
+          #!/bin/bash -xe
+          echo "Hello world, this is the {vendor} Testing System"
+
+
+- job-template:
+    name: 'dsvm-tempest-full'
+    node: '{node}'
+
+    wrappers:
+      - timeout:
+          timeout: 185  # Timeout in *minutes*
+          fail: true  # A job run that exceeds the timeout will cause a failure
+      - timestamps
+
+    builders:
+      #- devstack-checkout  # In macros.yaml from os-ext-testing
+      - shell: |
+          #!/bin/bash -xe
+          if [ -z $ZUUL_PROJECT ]; then
+              export ZUUL_PROJECT=openstack-dev/sandbox
+          fi
+          if [ -z $ZUUL_BRANCH ]; then
+              export ZUUL_BRANCH=master
+          fi
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=180
+          export DEVSTACK_GATE_TEMPEST=0
+          export RE_EXEC=true
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+      - link-logs  # In macros.yaml from os-ext-testing
+#
+#    publishers:
+#      - devstack-logs  # In macros.yaml from os-ext-testing
+#      - console-log  # In macros.yaml from os-ext-testing
+
+- job-template:
+    name: 'ironic-xcat-third-party-prep-env'
+    node: hypervisor_host
+    wrappers:
+      - timeout:
+         timeout: 60
+         fail: true
+      - timestamps
+
+    builders:
+      - shell: |
+          echo "build ironic xcat third party test environment..."
+          cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
+          virsh resume test_ci_slave_temp
+
+- job-template:
+    name: 'ironic-xcat-third-party-destroy-env'
+    node: hypervisor_host
+    wrappers:
+      - timeout:
+         timeout: 60
+         fail: true
+      - timestamps
+
+    builders:
+      - shell: |
+          echo "destroy ironic xcat third party test environment..."
+          virsh suspend test_ci_slave_temp
+
+
+- job-template:
+    name: 'ironic-xcat-third-party-test'
+    node: devstack_slave
+
+    wrappers:
+      - timeout:
+          timeout: 185  # Timeout in *minutes*
+          fail: true  # A job run that exceeds the timeout will cause a failure
+      - timestamps
+
+    builders:
+      #- devstack-checkout  # In macros.yaml from os-ext-testing
+      - shell: |
+          #!/bin/bash -xe
+          echo "ZUUL_BRANCH=$ZUUL_BRANCH ZUUL_REF=$ZUUL_REF"
+          echo "Now the workspace is :"
+          echo `pwd`
+          if [ -z $ZUUL_PROJECT ]; then
+              export ZUUL_PROJECT=openstack-dev/sandbox
+          fi
+          if [ -z $ZUUL_BRANCH ]; then
+              export ZUUL_BRANCH=master
+          fi
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TIMEOUT=180
+          #export DEVSTACK_GATE_TEMPEST=1
+          export DEVSTACK_GATE_IRONIC=1
+          export DEVSTACK_GATE_NEUTRON=1
+          export DEVSTACK_GATE_VIRT_DRIVER=ironic
+          #export DEVSTACK_GATE_TEMPEST_REGEX='(?!.*\[.*\bslow\b.*\])(tempest.services.baremetal|tempest.api.baremetal)'
+          export RE_EXEC=true
+          cp -rf /opt/stack/ironic-xcat-test/devstack-gate ./
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+          echo "ZUUL_BRANCH is "$ZUUL_BRANCH
+      - link-logs  # In macros.yaml from os-ext-testing
+
+- job-group:
+    name: ironic-xcat-third-party-test-group
+    jobs:
+      - ironic-xcat-third-party-prep-env
+      - ironic-xcat-third-party-test
+      - ironic-xcat-third-party-destroy-env
+
+
