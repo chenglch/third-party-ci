@@ -65,7 +65,7 @@ features:
 
   nova:
     base:
-      services: [n-api, n-cond, n-cpu, n-crt, n-net, n-obj, n-sch]
+      services: [n-api, n-cond, n-cpu, n-crt, n-obj, n-sch]
     havana:
       rm-compute-ext:
     icehouse:
@@ -82,7 +82,7 @@ features:
 
   neutron:
     base:
-      services: [quantum, q-svc, q-agt, q-dhcp, q-l3, q-meta, q-lbaas, q-vpn, q-fwaas, q-metering]
+      services: [neutron, q-svc, q-agt, q-dhcp, q-l3, q-meta]
       rm-services: [n-net]
 
   #swift:

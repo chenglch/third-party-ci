@@ -42,7 +42,7 @@
 
 - job-template:
     name: 'ironic-xcat-third-party-prep-env'
-    node: hypervisor_host
+    node: '{node}'
     block-downstream: true
     wrappers:
       - timeout:
@@ -53,17 +53,24 @@
     builders:
       - shell: |
           echo "build ironic xcat third party test environment..."
+          #virsh suspend test_ci_slave_temp
           #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
-          #virsh resume test_ci_slave_temp
+          virsh start test_ci_slave_temp
+          sleep 30s
+          cd /opt/ci_tmp
+          bash setup_env.sh
+          ssh -i /opt/ci_tmp/id_rsa jenkins@9.114.34.161 bash ssh.sh
+
 
     publishers:
       - trigger:
+          #project: ironic-xcat-third-party-test
           project: ironic-xcat-third-party-destroy-env
 
 - job-template:
     name: 'ironic-xcat-third-party-destroy-env'
-    node: hypervisor_host
-    block-upstream: true
+    node: '{node}'
+    block-downstream: true
     wrappers:
       - timeout:
          timeout: 60
@@ -73,17 +80,18 @@
     builders:
       - shell: |
           echo "destroy ironic xcat third party test environment..."
-          sleep 6000s
-          echo "complete"
-          #virsh suspend test_ci_slave_temp
+          cd /tmp
+          .test.sh
 
+          #virsh suspend test_ci_slave_temp
+          #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
+          #virsh resume test_ci_slave_temp
 
 
 
 - job-template:
     name: 'ironic-xcat-third-party-test'
-    node: devstack_slave
-
+    node: '{node}'
     wrappers:
       - timeout:
           timeout: 185  # Timeout in *minutes*
@@ -116,11 +124,5 @@
           echo "ZUUL_BRANCH is "$ZUUL_BRANCH
       - link-logs  # In macros.yaml from os-ext-testing
 
-- job-group:
-    name: ironic-xcat-third-party-test-group
-    jobs:
-      - ironic-xcat-third-party-prep-env
-      - ironic-xcat-third-party-test
-      - ironic-xcat-third-party-destroy-env
 
 

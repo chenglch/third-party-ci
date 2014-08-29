@@ -63,6 +63,13 @@ $option = $value
     $xtrace
 }
 
+function setup_network {
+    sudo ovs-vsctl add-port brbm eth1
+    sudo ip addr del 10.11.0.161/16 dev eth1
+    sudo ip addr add 10.11.0.161/16 dev brbm
+    sudo ip addr add 10.1.0.161/24 dev brbm
+}
+
 function delete_ironic_node {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
@@ -133,6 +140,7 @@ function restart_ironic_conductor {
         sudo kill -9 $conductor
     fi
     sudo mkdir -p /var/log/ironic
+    sudo chown -hR stack:stack /var/log/ironic
     /usr/bin/python /usr/local/bin/ironic-conductor --config-file=/etc/ironic/ironic.conf \
     --log-file=/var/log/ironic/ironic-conductor.log 1>&2 2>/dev/null &
     delete_ironic_node
@@ -148,11 +156,12 @@ function restart_dhcp_agent {
     fi
     iniset /etc/neutron/dhcp_agent.ini DEFAULT dnsmasq_config_file "/etc/dnsmasq/dnsmasq.conf"
     sudo mkdir -p /etc/dnsmasq
-    chown -hR stack:stack /etc/dnsmasq
+    sudo chown -hR stack:stack /etc/dnsmasq
     echo "enable-tftp" > /etc/dnsmasq/dnsmasq.conf
     echo "tftp-root=/opt/stack/data/ironic/tftpboot" >> /etc/dnsmasq/dnsmasq.conf
     echo "dhcp-boot=pxelinux.0" >> /etc/dnsmasq/dnsmasq.conf
-    mkdir -p /var/log/neutron
+    sudo mkdir -p /var/log/neutron
+    sudo chown -hR stack:stack /var/log/neutron
     python /usr/local/bin/neutron-dhcp-agent --config-file /etc/neutron/neutron.conf\
      --config-file=/etc/neutron/dhcp_agent.ini --log-file=/var/log/neutron/neutron-dhcp.log 1>&2 2>/dev/null &
     $xtrace
@@ -277,7 +286,7 @@ echo "setup ipminative environment"
 #mysql -psecret -uroot -h127.0.0.1 -e "delete from ironic.ports;"
 #mysql -psecret -uroot -h127.0.0.1 -e "delete from ironic.nodes;"
 source $BASE/new/devstack/openrc admin admin
-
+setup_network
 pepare_ironic_conductor
 restart_dhcp_agent
 restart_ironic_conductor
