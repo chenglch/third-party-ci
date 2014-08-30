@@ -7,41 +7,25 @@
           #!/bin/bash -xe
           echo "Hello world, this is the {vendor} Testing System"
 
-
 - job-template:
-    name: 'dsvm-tempest-full'
+    name: 'console-log'
     node: '{node}'
-
+    block-upstream: true
     wrappers:
       - timeout:
-          timeout: 185  # Timeout in *minutes*
-          fail: true  # A job run that exceeds the timeout will cause a failure
+         timeout: 60
+         fail: true
       - timestamps
 
     builders:
-      #- devstack-checkout  # In macros.yaml from os-ext-testing
       - shell: |
-          #!/bin/bash -xe
-          if [ -z $ZUUL_PROJECT ]; then
-              export ZUUL_PROJECT=openstack-dev/sandbox
-          fi
-          if [ -z $ZUUL_BRANCH ]; then
-              export ZUUL_BRANCH=master
-          fi
-          export PYTHONUNBUFFERED=true
-          export DEVSTACK_GATE_TIMEOUT=180
-          export DEVSTACK_GATE_TEMPEST=0
-          export RE_EXEC=true
-          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
-          ./safe-devstack-vm-gate-wrap.sh
-      - link-logs  # In macros.yaml from os-ext-testing
-#
-#    publishers:
-#      - devstack-logs  # In macros.yaml from os-ext-testing
-#      - console-log  # In macros.yaml from os-ext-testing
+          echo "wget console log ... "
+          cd /opt/ci_tmp
+          bash console_log.sh
+          echo "console log backup completed"
 
 - job-template:
-    name: 'ironic-xcat-third-party-prep-env'
+    name: 'check-ironic-xcat-third-party'
     node: '{node}'
     block-downstream: true
     wrappers:
@@ -61,14 +45,12 @@
           bash setup_env.sh
           ssh -i /opt/ci_tmp/id_rsa jenkins@9.114.34.161 bash ssh.sh
 
-
     publishers:
       - trigger:
-          #project: ironic-xcat-third-party-test
-          project: ironic-xcat-third-party-destroy-env
+          project: console-log
 
 - job-template:
-    name: 'ironic-xcat-third-party-destroy-env'
+    name: 'gate-ironic-xcat-third-party'
     node: '{node}'
     block-downstream: true
     wrappers:
@@ -79,13 +61,18 @@
 
     builders:
       - shell: |
-          echo "destroy ironic xcat third party test environment..."
-          cd /tmp
-          .test.sh
-
+          echo "build ironic xcat third party test environment..."
           #virsh suspend test_ci_slave_temp
           #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
-          #virsh resume test_ci_slave_temp
+          virsh start test_ci_slave_temp
+          sleep 30s
+          cd /opt/ci_tmp
+          bash setup_env.sh
+          ssh -i /opt/ci_tmp/id_rsa jenkins@9.114.34.161 bash ssh.sh
+
+    publishers:
+      - trigger:
+          project: console-log
 
 
 
