@@ -64,10 +64,14 @@ $option = $value
 }
 
 function setup_network {
+    local route_default=`route | grep "10.1.0.0" | grep "172.24.4.2"`
+    if [[ -n "$route_10.1.0.0_default" ]]; then
+        sudo route del -net 10.1.0.0 netmask 255.255.240.0 gw 172.24.4.2 dev br-ex
+    fi
     sudo ovs-vsctl add-port brbm eth1
     sudo ip addr del 10.11.0.161/16 dev eth1
     sudo ip addr add 10.11.0.161/16 dev brbm
-    #sudo ip addr add 10.1.0.161/20 dev brbm
+    sudo ip addr add 10.1.0.161/20 dev brbm
 }
 
 function delete_ironic_node {
@@ -87,8 +91,8 @@ function pepare_ironic_conductor {
     set +o xtrace
     echo "setup ironic pxe_ipminative driver"
     iniset /etc/ironic/ironic.conf DEFAULT enabled_drivers "fake,pxe_ssh,pxe_ipmitool,pxe_ipminative"
-    #iniset /etc/ironic/ironic.conf pxe tftp_server $IFONIC_API_IP_ADDRESS
-    #iniset /etc/ironic/ironic.conf conductor api_url "http://$IFONIC_API_IP_ADDRESS:6385"
+    iniset /etc/ironic/ironic.conf pxe tftp_server $IFONIC_API_IP_ADDRESS
+    iniset /etc/ironic/ironic.conf conductor api_url "http://$IFONIC_API_IP_ADDRESS:6385"
     sudo pip install pyghmi
     $xtrace
 }
@@ -269,27 +273,28 @@ function test_nova_boot {
         echo "power on $instance_uuid failed $0 ---line $LINENO"
         return 1
     fi
-    sleep ${NOVA_DEPLOY_ACTIVE_WAIT}s
-    local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
-    if [[ $task_state == "active" ]]; then
-        nova list
-        ironic node-set-power-state $IRONIC_NODE off
-        return 0
-    fi
-    local i=0
-    while(($i<$RETRY_TIME))
-    do
-        local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
-        if [[ $task_state == "active" ]]; then
-            nova list
-            ironic node-set-power-state $IRONIC_NODE off
-            return 0
-        fi
-        sleep ${NOVA_SCAN_WAIT}s
-        i=$(($i+1))
-    done
-    echo "Download $instance_uuid failed $0 ---line $LINENO"
-    return 1
+    ironic node-set-power-state $IRONIC_NODE off;
+#    sleep ${NOVA_DEPLOY_ACTIVE_WAIT}s
+#    local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
+#    if [[ $task_state == "active" ]]; then
+#        nova list
+#        ironic node-set-power-state $IRONIC_NODE off
+#        return 0
+#    fi
+#    local i=0
+#    while(($i<$RETRY_TIME))
+#    do
+#        local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
+#        if [[ $task_state == "active" ]]; then
+#            nova list
+#            ironic node-set-power-state $IRONIC_NODE off
+#            return 0
+#        fi
+#        sleep ${NOVA_SCAN_WAIT}s
+#        i=$(($i+1))
+#    done
+#    echo "Download $instance_uuid failed $0 ---line $LINENO"
+    return 0
 }
 echo "setup ipminative environment"
 #mysql -psecretmysql -uroot -h127.0.0.1 -e "delete from ironic.ports;"
@@ -297,7 +302,7 @@ echo "setup ipminative environment"
 source $BASE/new/devstack/openrc admin admin
 setup_network
 pepare_ironic_conductor
-#restart_dhcp_agent
+restart_dhcp_agent
 restart_ironic_conductor
 init_image
 

@@ -46,7 +46,8 @@ fi
 cd $BASE/ironic-xcat-test/testcase/
 sudo -H -u stack stdbuf -oL -eL ./test_stack.sh > $BASE/logs/xcat-ci.log
 XCAT_CI_RETVAL=$?
-tar cvzf $BASE/logs.tar.gz $BASE/logs
+cd $BASE/
+sudo tar cvzf logs.tar.gz logs > /dev/null
 exit $XCAT_CI_RETVAL
 
 

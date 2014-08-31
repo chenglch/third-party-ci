@@ -82,7 +82,7 @@ features:
 
   neutron:
     base:
-      services: [neutron, q-svc, q-agt, q-dhcp, q-l3, q-meta]
+      services: [neutron, q-svc, q-agt, q-dhcp, q-l3, q-lbaas,q-meta]
       rm-services: [n-net]
 
   #swift:

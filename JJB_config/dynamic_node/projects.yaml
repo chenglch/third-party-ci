@@ -8,9 +8,11 @@
         - noop-check-communication
         #- dsvm-tempest-full:
             #node: devstack_slave
-        - ironic-xcat-third-party-prep-env:
+        - check-ironic-xcat-third-party:
+            node: hypervisor_host
+        - gate-ironic-xcat-third-party:
+            node: hypervisor_host
+        - console-log:
             node: hypervisor_host
         - ironic-xcat-third-party-test:
             node: devstack_slave
-        - ironic-xcat-third-party-destroy-env:
-            node: hypervisor_host
