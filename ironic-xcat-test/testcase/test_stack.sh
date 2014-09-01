@@ -6,6 +6,7 @@ umask 022
 # Keep track of the devstack directory
 TOP_DIR=$(cd $(dirname "$0") && pwd)
 source ${TOP_DIR}/config.sh
+source /home/jenkins/env.sh
 
 function get_field {
     local data field
@@ -69,9 +70,9 @@ function setup_network {
         sudo route del -net 10.1.0.0 netmask 255.255.240.0 gw 172.24.4.2 dev br-ex
     fi
     sudo ovs-vsctl add-port brbm eth1
-    sudo ip addr del 10.11.0.161/16 dev eth1
-    sudo ip addr add 10.11.0.161/16 dev brbm
-    sudo ip addr add 10.1.0.161/20 dev brbm
+    sudo ip addr del ${IRONIC_INT_IP_ADDRESS}/16 dev eth1
+    sudo ip addr add ${IRONIC_INT_IP_ADDRESS}/16 dev brbm
+    sudo ip addr add ${IRONIC_TFTP_IP_ADDRESS}/20 dev brbm
 }
 
 function delete_ironic_node {
@@ -91,8 +92,8 @@ function pepare_ironic_conductor {
     set +o xtrace
     echo "setup ironic pxe_ipminative driver"
     iniset /etc/ironic/ironic.conf DEFAULT enabled_drivers "fake,pxe_ssh,pxe_ipmitool,pxe_ipminative"
-    iniset /etc/ironic/ironic.conf pxe tftp_server $IFONIC_API_IP_ADDRESS
-    iniset /etc/ironic/ironic.conf conductor api_url "http://$IFONIC_API_IP_ADDRESS:6385"
+    iniset /etc/ironic/ironic.conf pxe tftp_server $IRONIC_API_IP_ADDRESS
+    iniset /etc/ironic/ironic.conf conductor api_url "http://$IRONIC_API_IP_ADDRESS:6385"
     sudo pip install pyghmi
     $xtrace
 }
@@ -205,7 +206,7 @@ function test_create_node {
     # for the check test use virtual machine to test deployment
     else
         export IRONIC_NODE=`ironic node-create  --driver pxe_ssh -i pxe_deploy_kernel=$IR_KERNEL_IMAGE_ID -i pxe_deploy_ramdisk=$IR_RAMFS_IMAGE_ID\
-        -i ssh_virt_type=virsh -i ssh_address=9.114.34.161 -i ssh_port=22 -i ssh_username=stack -i \
+        -i ssh_virt_type=virsh -i ssh_address=$IRONIC_SSH_HOST -i ssh_port=22 -i ssh_username=stack -i \
         ssh_key_filename=/opt/stack/data/ironic/ssh_keys/ironic_key \
         -p cpus=8 -p memory_mb=2048 -p local_gb=10 -p cpu_arch=x86_64\
         | grep uuid | grep -v chassis_uuid |  awk '{print $4}'`
@@ -273,7 +274,10 @@ function test_nova_boot {
         echo "power on $instance_uuid failed $0 ---line $LINENO"
         return 1
     fi
-    ironic node-set-power-state $IRONIC_NODE off;
+    sleep ${NOVA_POWER_ON_WAIT}s
+    local ironic_node=`ironic node-list | grep $instance_uuid | get_field 1`
+    nova list
+    ironic node-set-power-state $ironic_node off;
 #    sleep ${NOVA_DEPLOY_ACTIVE_WAIT}s
 #    local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
 #    if [[ $task_state == "active" ]]; then

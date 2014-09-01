@@ -39,11 +39,12 @@
           echo "build ironic xcat third party test environment..."
           #virsh suspend test_ci_slave_temp
           #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
+          virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.beforedevstack
           virsh start test_ci_slave_temp
           sleep 30s
           cd /opt/ci_tmp
           bash setup_env.sh
-          ssh -i /opt/ci_tmp/id_rsa jenkins@9.114.34.161 bash ssh.sh
+          ssh -i /opt/ci_tmp/id_rsa jenkins@testcislave-tmp bash ssh.sh
 
     publishers:
       - trigger:
@@ -64,11 +65,13 @@
           echo "build ironic xcat third party test environment..."
           #virsh suspend test_ci_slave_temp
           #cp -f /root/ci/kvm/test_ci_slave_template.qcow2 /opt/ci_tmp/test_ci_slave_temp.qcow2
+          virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.beforedevstack
           virsh start test_ci_slave_temp
           sleep 30s
           cd /opt/ci_tmp
+          export ZUUL_PIPELINE="gate"
           bash setup_env.sh
-          ssh -i /opt/ci_tmp/id_rsa jenkins@9.114.34.161 bash ssh.sh
+          ssh -i /opt/ci_tmp/id_rsa jenkins@testcislave-tmp bash ssh.sh
 
     publishers:
       - trigger:
