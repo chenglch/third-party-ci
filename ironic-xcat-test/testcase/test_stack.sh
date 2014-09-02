@@ -66,7 +66,7 @@ $option = $value
 
 function setup_network {
     local route_default=`route | grep "10.1.0.0" | grep "172.24.4.2"`
-    if [[ -n "$route_10.1.0.0_default" ]]; then
+    if [[ -n "$route_default" ]]; then
         sudo route del -net 10.1.0.0 netmask 255.255.240.0 gw 172.24.4.2 dev br-ex
     fi
     sudo ovs-vsctl add-port brbm eth1

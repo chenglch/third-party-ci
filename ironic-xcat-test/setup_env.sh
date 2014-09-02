@@ -1,4 +1,9 @@
 #!/bin/bash
+
+virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.beforedevstack
+virsh start test_ci_slave_temp
+sleep 30s
+
 echo "#!/bin/bash" > env.sh
 if [ -n "$ZUUL_PROJECT" ]; then
     echo "export ZUUL_PROJECT=$ZUUL_PROJECT" >> env.sh
@@ -50,4 +55,4 @@ if [ -n "$BRANCH_OVERRIDE" ]; then
 fi
 
 chmod 755 env.sh
-scp -i /opt/ci_tmp/id_rsa ./env.sh jenkins@9.114.34.161:~/
+scp -i /opt/ci_tmp/id_rsa ./env.sh jenkins@testcislave-tmp:~/

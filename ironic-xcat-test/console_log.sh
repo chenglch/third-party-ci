@@ -20,8 +20,10 @@ cd /tmp/ironic-xcat-test/logs/$DATE_DIR/$ZUUL_LOG_DIR
 
 
 wget http://testcimaster:8080/job/$JOB_NAME/$BUILD_NUMBER/consoleText
-mv consoleText "console_${JOB_NAME}_${BUILD_NUMBER}.log"
-scp -i /opt/ci_tmp/sourceforge/id_rsa -r /tmp/ironic-xcat-test/logs/$DATE_DIR chenglch,xCAT@web.sourceforge.net:/home/frs/project/xcat/OpenStack/CI
+mv consoleText console.log
+if [[ "$ZUUL_CHANGE" != 0 ]]; then
+    scp -i /opt/ci_tmp/sourceforge/id_rsa -r /tmp/ironic-xcat-test/logs/$DATE_DIR chenglch,xCAT@web.sourceforge.net:/home/frs/project/xcat/OpenStack/CI
+fi
 
 #ssh chenglch,xCAT@web.sourceforge.net mkdir -p /home/frs/project/xcat/OpenStack/CI/$DATE_DIR
 
