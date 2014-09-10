@@ -44,6 +44,13 @@
     publishers:
       - trigger:
           project: console-log
+          threshold: FAILURE
+      - trigger:
+          project: console-log
+          threshold: UNSTABLE
+      - trigger:
+          project: console-log
+          threshold: SUCCESS
 
 - job-template:
     name: 'gate-ironic-xcat-third-party'
@@ -66,6 +73,13 @@
     publishers:
       - trigger:
           project: console-log
+          threshold: FAILURE
+      - trigger:
+          project: console-log
+          threshold: UNSTABLE
+      - trigger:
+          project: console-log
+          threshold: SUCCESS
 
 
 
@@ -104,5 +118,17 @@
           echo "ZUUL_BRANCH is "$ZUUL_BRANCH
       - link-logs  # In macros.yaml from os-ext-testing
 
+- job-template:
+    name: '{pipeline}-test-concurrency'
+    node: '{node}'
+    block-downstream: true
+    wrappers:
+      - timeout:
+         timeout: 60
+         fail: true
+      - timestamps
 
-
+    builders:
+      - shell: |
+          echo "test concurrency"
+          sleep 60s

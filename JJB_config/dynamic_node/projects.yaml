@@ -16,3 +16,11 @@
             node: hypervisor_host
         - ironic-xcat-third-party-test:
             node: devstack_slave
+        - '{pipeline}-test-concurrency':
+            pipeline: gate
+            node: hypervisor_host
+        - '{pipeline}-test-concurrency':
+            pipeline: check
+            node: hypervisor_host
+
+

@@ -97,6 +97,10 @@ function pepare_ironic_conductor {
     sudo pip install pyghmi
     $xtrace
 }
+
+function copy_log {
+    sudo cp /var/log/ironic/* $BASE/logs
+}
 # para:
 # @1:image path
 # @2:disk format
@@ -230,13 +234,16 @@ function test_create_node {
         sleep ${IRONIC_NODE_POWER_OFF_WAIT}s
     elif [[ -z $power_state ]] || [[ $power_state == "None" ]]; then
         echo "get power info error $0 ---line $LINENO"
+        copy_log
         return 1;
     fi
     power_state=`ironic node-show $IRONIC_NODE | grep power_state | grep -v target_power_state | get_field 2`
     if [[ $power_state == "power off" ]]; then
+        copy_log
         return 0;
     else
         echo "ironic power off error $0 ---line $LINENO"
+        copy_log
         return 1;
     fi
     $xtrace
@@ -266,18 +273,23 @@ function test_nova_boot {
     local provision_state=`ironic node-list | grep $instance_uuid | get_field 4`
     if [[ $provision_state != "deploying" ]] && [[ $provision_state != "wait call-back" ]]; then
         echo "deploy $instance_uuid failed $0 ---line $LINENO"
+        copy_log
         return 1
     fi
     sleep ${NOVA_POWER_ON_WAIT}s
     local power_state=`ironic node-list | grep $instance_uuid | get_field 3`
     if [[ $power_state != "power on" ]]; then
         echo "power on $instance_uuid failed $0 ---line $LINENO"
+        copy_log
         return 1
     fi
     sleep ${NOVA_POWER_ON_WAIT}s
     local ironic_node=`ironic node-list | grep $instance_uuid | get_field 1`
     nova list
     ironic node-set-power-state $ironic_node off;
+    sleep ${NOVA_POWER_ON_WAIT}s
+    ironic node-set-power-state $ironic_node off;
+    copy_log
 #    sleep ${NOVA_DEPLOY_ACTIVE_WAIT}s
 #    local task_state=`ironic node-list | grep $instance_uuid | get_field 4`
 #    if [[ $task_state == "active" ]]; then
