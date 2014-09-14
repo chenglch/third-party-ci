@@ -7,7 +7,8 @@ umask 022
 TOP_DIR=$(cd $(dirname "$0") && pwd)
 source ${TOP_DIR}/config.sh
 source /home/jenkins/env.sh
-
+source $BASE/new/devstack/openrc admin admin
+set -o xtrace
 function get_field {
     local data field
     while read data; do
@@ -99,7 +100,10 @@ function pepare_ironic_conductor {
 }
 
 function copy_log {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
     sudo cp /var/log/ironic/* $BASE/logs
+    $xtrace
 }
 # para:
 # @1:image path
@@ -141,8 +145,6 @@ function init_image {
 
 
 function restart_ironic_conductor {
-    local xtrace=$(set +o | grep xtrace)
-    set +o xtrace
     echo "restart ironic conductor"
     local conductor=`ps -ef | grep ironic-conductor | grep -v grep | awk '{print $2}' | xargs`
     if [[ -n $conductor ]]; then
@@ -153,7 +155,6 @@ function restart_ironic_conductor {
     /usr/bin/python /usr/local/bin/ironic-conductor --config-file=/etc/ironic/ironic.conf \
     --log-file=/var/log/ironic/ironic-conductor.log 1>&2 2>/dev/null &
     delete_ironic_node
-    $xtrace
 }
 
 function restart_dhcp_agent {
@@ -177,27 +178,20 @@ function restart_dhcp_agent {
 }
 
 function mock_test {
-    local xtrace=$(set +o | grep xtrace)
     sudo pip install mock
     sudo pip install fixtures
     sudo pip install testtools
     set +o xtrace
     nosetests -sv ironic.tests.drivers.test_ipminative
     return $?
-    $xtrace
 }
 
 function pysical_test {
-    local xtrace=$(set +o | grep xtrace)
-    set +o xtrace
     nosetests -sv ${CUR_DIR}/test_ipminative.py
     return $?
-    $xtrace
 }
 
 function test_create_node {
-    local xtrace=$(set +o | grep xtrace)
-    set +o xtrace
     export CIRROS_IMAGE_UUID=`glance image-list | grep ami | grep cirros | awk '{print $2}'`
     unset -v IRONIC_NODE
     # for the gate test use real machine to test deployment
@@ -246,13 +240,10 @@ function test_create_node {
         copy_log
         return 1;
     fi
-    $xtrace
 }
 
 function test_nova_boot {
     export CIRROS_IMAGE_UUID=`glance image-list | grep ami | grep cirros | awk '{print $2}'`
-    local xtrace=$(set +o | grep xtrace)
-    set +o xtrace
     local bare_flavor=`nova flavor-list | grep baremetal`
     echo "deploy flavor $bare_flavor $0 ---line $LINENO"
     if [[ -z "$bare_flavor" ]]; then
@@ -262,9 +253,9 @@ function test_nova_boot {
     local net_id=`neutron net-list | grep private | get_field 1`
     echo "create net_id $net_id $0 ---line $LINENO"
     sleep 60s
-    local nova_command="nova boot --flavor baremetal --image $CIRROS_IMAGE_UUID test_ipminative \
-    --nic net-id=$net_id | grep id | head -n 1 | get_field 2"
-    echo $nova_command
+#    local nova_command="nova boot --flavor baremetal --image $CIRROS_IMAGE_UUID test_ipminative \
+#    --nic net-id=$net_id | grep id | head -n 1 | get_field 2"
+#    echo $nova_command
     local instance=`nova boot --flavor baremetal --image $CIRROS_IMAGE_UUID test_ipminative \
     --nic net-id=$net_id | grep id`
     local instance_uuid=`echo $instance | head -n 1 | get_field 2`
@@ -315,7 +306,7 @@ function test_nova_boot {
 echo "setup ipminative environment"
 #mysql -psecretmysql -uroot -h127.0.0.1 -e "delete from ironic.ports;"
 #mysql -psecretmysql -uroot -h127.0.0.1 -e "delete from ironic.nodes;"
-source $BASE/new/devstack/openrc admin admin
+
 setup_network
 pepare_ironic_conductor
 restart_dhcp_agent
