@@ -1,6 +1,6 @@
 #!/bin/bash
 
-virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.beforedevstack
+virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.scp
 virsh start test_ci_slave_temp
 sleep 30s
 
@@ -54,5 +54,27 @@ if [ -n "$BRANCH_OVERRIDE" ]; then
     fi
 fi
 
+echo "export JENKINS_JOB_WORKSPACE=$WORKSPACE" >> env.sh
+
 chmod 755 env.sh
+source env.sh
+function create_log_dir {
+    cd $WORKSPACE
+    rm -rf *
+    if [ -z "$ZUUL_CHANGE" ]; then
+        export ZUUL_CHANGE=0
+    fi
+    if [ -z "$ZUUL_PIPELINE" ]; then
+        export ZUUL_PIPELINE="check"
+    fi
+    if [ -z "$ZUUL_PATCHSET" ]; then
+        export ZUUL_PATCHSET=0
+    fi
+    export ZUUL_LOG_DIR=${ZUUL_CHANGE}/${ZUUL_PATCHSET}/${ZUUL_PIPELINE}/${JOB_NAME}/${BUILD_NUMBER}
+    mkdir -p $ZUUL_LOG_DIR
+}
+create_log_dir
+export JENKINS_LOG_WORKSPACE=${JENKINS_JOB_WORKSPACE}/${ZUUL_LOG_DIR}
+cd /opt/ci_tmp
+echo "export JENKINS_LOG_WORKSPACE=$JENKINS_LOG_WORKSPACE" >> env.sh
 scp -i /opt/ci_tmp/id_rsa ./env.sh jenkins@testcislave-tmp:~/

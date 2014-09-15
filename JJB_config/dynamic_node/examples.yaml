@@ -42,15 +42,19 @@
           ssh -i /opt/ci_tmp/id_rsa jenkins@testcislave-tmp bash ssh.sh
 
     publishers:
-      - trigger:
-          project: console-log
-          threshold: FAILURE
-      - trigger:
-          project: console-log
-          threshold: UNSTABLE
-      - trigger:
-          project: console-log
-          threshold: SUCCESS
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: ''
+              source: '$ZUUL_CHANGE/'
+              keep-hierarchy: true
+              copy-after-failure: true
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: '$ZUUL_CHANGE/$ZUUL_PATCHSET/$ZUUL_PIPELINE/$JOB_NAME/$BUILD_NUMBER/'
+              copy-after-failure: true
+              copy-console: true
 
 - job-template:
     name: 'gate-ironic-xcat-third-party'
@@ -71,17 +75,19 @@
           ssh -i /opt/ci_tmp/id_rsa jenkins@testcislave-tmp bash ssh.sh
 
     publishers:
-      - trigger:
-          project: console-log
-          threshold: FAILURE
-      - trigger:
-          project: console-log
-          threshold: UNSTABLE
-      - trigger:
-          project: console-log
-          threshold: SUCCESS
-
-
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: ''
+              source: '$ZUUL_CHANGE/'
+              keep-hierarchy: true
+              copy-after-failure: true
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: '$ZUUL_CHANGE/$ZUUL_PATCHSET/$ZUUL_PIPELINE/$JOB_NAME/$BUILD_NUMBER/'
+              copy-after-failure: true
+              copy-console: true
 
 - job-template:
     name: 'ironic-xcat-third-party-test'
@@ -121,7 +127,6 @@
 - job-template:
     name: '{pipeline}-test-concurrency'
     node: '{node}'
-    block-downstream: true
     wrappers:
       - timeout:
          timeout: 60
@@ -131,4 +136,18 @@
     builders:
       - shell: |
           echo "test concurrency"
-          sleep 60s
+
+    publishers:
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: ''
+              source: 'test/logs/'
+              keep-hierarchy: true
+              copy-after-failure: true
+      - scp:
+          site: 'web.sourceforge.net'
+          files:
+            - target: 'test/logs'
+              copy-after-failure: true
+              copy-console: true

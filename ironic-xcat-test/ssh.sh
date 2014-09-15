@@ -40,11 +40,14 @@ cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
 GATE_RETVAL=$?
 if [ $GATE_RETVAL -ne 0 ]; then
     #tar cvzf $BASE/logs.tar.gz $BASE/logs
+    sudo scp -i /home/jenkins/.ssh/id_rsa -r /opt/stack/logs root@hypervisor-host:$JENKINS_LOG_WORKSPACE
     exit $GATE_RETVAL
 fi
 cd $BASE/ironic-xcat-test/testcase/
+echo "xcat-ci log is  logs/xcat-ci.log"
 sudo -H -u stack stdbuf -oL -eL ./test_stack.sh > $BASE/logs/xcat-ci.log
 XCAT_CI_RETVAL=$?
+sudo scp -i /home/jenkins/.ssh/id_rsa -r /opt/stack/logs root@hypervisor-host:$JENKINS_LOG_WORKSPACE
 exit $XCAT_CI_RETVAL
 
 
