@@ -2,6 +2,7 @@
 
 virsh snapshot-revert test_ci_slave_temp test_ci_slave_temp.scp
 virsh start test_ci_slave_temp
+bash rmlog.sh
 sleep 30s
 
 echo "#!/bin/bash" > env.sh

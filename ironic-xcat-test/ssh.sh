@@ -17,6 +17,7 @@ export DEVSTACK_GATE_TEMPEST=1
 export DEVSTACK_GATE_IRONIC=1
 export DEVSTACK_GATE_NEUTRON=1
 export DEVSTACK_GATE_VIRT_DRIVER=ironic
+export DEVSTACK_GATE_IRONIC_DRIVER=pxe_ssh
 export TEMPEST_CONCURRENCY=1
 export ZUUL_URL=http://testcimaster/p
 export DEVSTACK_GATE_FEATURE_MATRIX=/opt/stack/ironic-xcat-test/features.yaml

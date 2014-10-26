@@ -68,12 +68,13 @@ def _ipmitool_cmd(info,args):
             LAST_CMD_TIME[info['address']] = time.time()
         return out
 
-class IPMINativePowerMethodTestCase(base.TestCase):
+class IPMINativePowerMethodTestCase(db_base.DbTestCase):
     """Test cases for ipminative power methods."""
 
     def setUp(self):
         super(IPMINativePowerMethodTestCase, self).setUp()
         self.context = context.get_admin_context()
+        self.driver = driver_factory.get_driver("pxe_ipminative")
         self.node = obj_utils.create_test_node(self.context,
                                                driver='pxe_ipminative',
                                                driver_info=INFO_DICT)
