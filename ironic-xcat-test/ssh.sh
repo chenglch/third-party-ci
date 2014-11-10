@@ -20,7 +20,11 @@ export DEVSTACK_GATE_VIRT_DRIVER=ironic
 export DEVSTACK_GATE_IRONIC_DRIVER=pxe_ssh
 export TEMPEST_CONCURRENCY=1
 export ZUUL_URL=http://testcimaster/p
+export DEVSTACK_GATE_POSTGRES=0
+export DEVSTACK_GATE_IRONIC_BUILD_RAMDISK=1
+export BRANCH_OVERRIDE=default
 export DEVSTACK_GATE_FEATURE_MATRIX=/opt/stack/ironic-xcat-test/features.yaml
+export PRECACHE_IMAGES=false
 
 if [ "$BRANCH_OVERRIDE" != "default" ] ; then
      export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
