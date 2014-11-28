@@ -98,14 +98,10 @@ class IPMINativePowerMethodTestCase(db_base.DbTestCase):
                           node)
     #  ipmitool -I lan -H 10.11.0.107 -U USERID -P PASSW0RD power status
     def test__power_status(self):
-        args ="power status"
-        out = _ipmitool_cmd(self.info,args)
-        self.assertIsNot(False,out)
-        if out:
-            # out :Chassis Power is off , Chassis Power is on
-            out = out.strip().split()[-1]
-            state = ipminative._power_status(self.info).strip().split()[-1]
-            self.assertEqual(out, state)
+        state = ipminative._power_status(self.info).strip().split()[-1]
+        target_state = ipminative._power_status(self.info).strip().split()[-1]
+        print target_state
+        self.assertEqual(target_state, state)
 
 class IPMINativeBootdevTestCase(db_base.DbTestCase):
     def setUp(self):
@@ -118,34 +114,19 @@ class IPMINativeBootdevTestCase(db_base.DbTestCase):
         self.dbapi = db_api.get_instance()
         self.info = ipminative._parse_driver_info(self.node)
 
-
     def test_set_boot_device_pxe(self):
         with task_manager.acquire(self.context,
                                   self.node.uuid) as task:
             self.driver.management.set_boot_device(task, 'pxe')
-        # PXE is converted to 'net' internally by ipminative
-        args = "chassis bootparam get 5"
-        #Boot Device Selector : Force PXE
-        out = _ipmitool_cmd(self.info,args)
-        self.assertIsNot(False,out)
-        re_obj = re.search('Boot Device Selector : (.+)?\n', out)
-        if re_obj:
-            boot_selector = re_obj.groups('')[0]
-            self.assertIn('PXE',boot_selector)
+            response = self.driver.management.get_boot_device(task)
+        self.assertEqual(response['boot_device'],'pxe')
 
     def test_set_boot_device_hd(self):
         with task_manager.acquire(self.context,
                                   self.node.uuid) as task:
             self.driver.management.set_boot_device(task, 'disk')
-        # PXE is converted to 'net' internally by ipminative
-        args = "chassis bootparam get 5"
-        #Boot Device Selector : Force Hard-Drive
-        out = _ipmitool_cmd(self.info,args)
-        self.assertIsNot(False,out)
-        re_obj = re.search('Boot Device Selector : (.+)?\n', out)
-        if re_obj:
-            boot_selector = re_obj.groups('')[0]
-            self.assertIn('Hard-Drive',boot_selector)
+            response = self.driver.management.get_boot_device(task)
+        self.assertEqual(response['boot_device'],'disk')
 
 
 

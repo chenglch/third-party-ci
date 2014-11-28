@@ -66,14 +66,14 @@ $option = $value
 }
 
 function setup_network {
-    local route_default=`route | grep "10.1.0.0" | grep "172.24.4.2"`
-    if [[ -n "$route_default" ]]; then
-        sudo route del -net 10.1.0.0 netmask 255.255.240.0 gw 172.24.4.2 dev br-ex
-    fi
+    #local route_default=`route | grep "10.1.0.0" | grep "172.24.4.2"`
+    #if [[ -n "$route_default" ]]; then
+    #    sudo route del -net 10.1.0.0 netmask 255.255.240.0 gw 172.24.4.2 dev br-ex
+    #fi
     sudo ovs-vsctl add-port brbm eth1
     sudo ip addr del ${IRONIC_INT_IP_ADDRESS}/16 dev eth1
     sudo ip addr add ${IRONIC_INT_IP_ADDRESS}/16 dev brbm
-    sudo ip addr add ${IRONIC_TFTP_IP_ADDRESS}/20 dev brbm
+    #sudo ip addr add ${IRONIC_TFTP_IP_ADDRESS}/20 dev brbm
 }
 
 function delete_ironic_node {
@@ -93,8 +93,8 @@ function pepare_ironic_conductor {
     set +o xtrace
     echo "setup ironic pxe_ipminative driver"
     iniset /etc/ironic/ironic.conf DEFAULT enabled_drivers "fake,pxe_ssh,pxe_ipmitool,pxe_ipminative"
-    iniset /etc/ironic/ironic.conf pxe tftp_server $IRONIC_API_IP_ADDRESS
-    iniset /etc/ironic/ironic.conf conductor api_url "http://$IRONIC_API_IP_ADDRESS:6385"
+    #iniset /etc/ironic/ironic.conf pxe tftp_server $IRONIC_API_IP_ADDRESS
+    #iniset /etc/ironic/ironic.conf conductor api_url "http://$IRONIC_API_IP_ADDRESS:6385"
     sudo pip install pyghmi
     $xtrace
 }
@@ -121,7 +121,7 @@ function glance_add_image {
 
 function init_image {
     echo "init image"
-    local image_name=`basename $IR_RAMFS_IMAGE_PATH`
+    local image_name=$IR_RAMFS_IMAGE_GLANCE
     export IR_RAMFS_IMAGE_ID=`glance image-list | grep $image_name | get_field 1 | xargs`
 #    if [ -n "$ids" ]; then
 #         for id in $ids; do
@@ -130,7 +130,7 @@ function init_image {
 #         done
 #    fi
 
-    local image_name=`basename $IR_KERNEL_IMAGE_PATH`
+    local image_name=$IR_KERNEL_IMAGE_GLANCE
     export IR_KERNEL_IMAGE_ID=`glance image-list | grep $image_name | get_field 1 | xargs`
 #    if [ -n "$ids" ]; then
 #         for id in $ids; do
@@ -309,7 +309,7 @@ echo "setup ipminative environment"
 
 setup_network
 pepare_ironic_conductor
-restart_dhcp_agent
+# restart_dhcp_agent
 restart_ironic_conductor
 init_image
 
